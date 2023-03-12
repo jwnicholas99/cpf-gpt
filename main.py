@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import streamlit as st
 
 from langchain import OpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -8,28 +9,12 @@ from langchain.vectorstores import Chroma
 from langchain.chains import VectorDBQAWithSourcesChain
 
 class CPF_QA():
-    def __init__(self, data_path, index_path):
+    def __init__(self, index_path):
         embeddings = OpenAIEmbeddings()
-
-        if len(os.listdir(index_path)) == 0:
-            
-            with open('data/state_of_the_union.txt') as f:
-                state_of_the_union = f.read()
-                text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=0)
-                texts = text_splitter.split_text(state_of_the_union)
-
-                self.vectorstore = Chroma.from_texts(
-                    texts, 
-                    embeddings, 
-                    metadatas=[{"source": f"{i}-pl"} for i in range(len(texts))],
-                    persist_directory=index_path
-                )
-                self.vectorstore.persist()
-        else:
-            self.vectorstore = Chroma(
-                embedding_function=embeddings, 
-                persist_directory=index_path
-            )
+        self.vectorstore = Chroma(
+            embedding_function=embeddings, 
+            persist_directory=index_path
+        )
         self.chain = VectorDBQAWithSourcesChain.from_chain_type(
             OpenAI(model_name="gpt-3.5-turbo", temperature=0), 
             chain_type="stuff", 
@@ -48,5 +33,6 @@ class CPF_QA():
 
 if __name__=='__main__':
     load_dotenv()
-    agent = CPF_QA("./data", "./index")
-    print(agent.query("What was written in the article?"))
+    agent = CPF_QA("./index")
+    #print(agent.search_docs("Can the CPF funds be used to pay for Medishield?"))
+    print(agent.query("What is the employer's CPF contribution for somebody who is 56 years old?"))
