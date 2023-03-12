@@ -11,7 +11,6 @@ DOWNLOAD_DIR = r"PATH/TO/DOWNLOAD/DIR"
 
 service = Service("./chromedriver.exe")
 options = Options()
-#options.add_argument("--headless")
 options.add_argument("--window-size=1920,1200")
 options.add_experimental_option("prefs", {
   "download.default_directory": DOWNLOAD_DIR,
@@ -50,15 +49,28 @@ def rename_file(newname, folder_of_download):
 expansions = driver.find_elements(by=By.XPATH, value="//a[@class='displayText']")
 for expansion in expansions:
     click_element(expansion, 0.5)
-    break
 
-# Find all sections' checkboxes
+# Find all sections' checkboxes and download
 print_pdf = driver.find_element(by=By.XPATH, value="//button[@data-bind='click: onPrintToPdfClick']")
 checkboxes = driver.find_elements(by=By.XPATH, value="//input[@class='form-check-input childID']")
-for checkbox in checkboxes[:4]:
+for checkbox in checkboxes:
     click_element(checkbox, 1)
     click_element(print_pdf, 1)
     time.sleep(1)
-    rename_file("blah.pdf", "../data")
+    label = driver.execute_script("return arguments[0].nextElementSibling", checkbox)
+    rename_file(f"{label.text}.pdf", "../data")
+    time.sleep(2)
+    click_element(checkbox, 1)
+
+
+# Download Schedules
+schedule_names = ["Sc1-", "Sc2-", "Sc3-"]
+for schedule_name in schedule_names:
+    checkbox = driver.find_element(by=By.XPATH, value=f"//input[@value='{schedule_name}']")
+    click_element(checkbox, 1)
+    click_element(print_pdf, 1)
+    time.sleep(3)
+    label = driver.execute_script("return arguments[0].nextElementSibling", checkbox)
+    rename_file(f"{label.text}.pdf", "../data")
     time.sleep(2)
     click_element(checkbox, 1)
