@@ -21,7 +21,7 @@ def load_vectorstore(index_path):
 @st.cache_resource
 def load_chain(_vectorstore):
     chain = VectorDBQAWithSourcesChain.from_chain_type(
-        OpenAI(model_name="gpt-3.5-turbo", temperature=0), 
+        OpenAI(model_name="gpt-3.5-turbo", temperature=0, max_tokens=512), 
         chain_type="stuff", 
         vectorstore=_vectorstore,
         return_source_documents=True
@@ -54,9 +54,12 @@ st.write(
 st.write(
 """
 GPT3-powered question and answer for the
-[Singapore CPF 1953 Act](https://sso.agc.gov.sg/Act/CPFA1953) (as of 12 March 2023).
+[Singapore CPF 1953 Act](https://sso.agc.gov.sg/Act/CPFA1953) (version as of 12 March 2023).
 This uses [LangChain](https://github.com/hwchase17/langchain) to interface with
-GPT3 and [Chroma](https://github.com/chroma-core/chroma) as the vectorstore. 
+GPT3 and [Chroma](https://github.com/chroma-core/chroma) as the vectorstore.
+\n\nDo note that GPT3 might interpret things wrongly and give inaccurate answers! Just a fun little
+project to see if GPT3 can be used to answer questions about government policies or legal documents
+that are often quite long and tedious to read :eyeglasses::newspaper:
 """)
 st.subheader("Ask your question below :speech_balloon: ")
 question = st.text_input(
@@ -74,5 +77,11 @@ if question:
     # Display sources
     st.subheader("Sources")
     for source_doc in response['source_documents']:
+        source_text = source_doc.page_content
+        source_text = source_text.replace("$", "\$") # add escape char for $, else will be Latex 
+        source_title = source_doc.metadata['source']
+        source_title = ".".join(source_title.split(".")[:-1]) # remove .pdf-chunknum
+
         st.info(f"""
-        {source_doc}""")
+        **Section: {source_title}**\n\n{source_text}
+        """)
